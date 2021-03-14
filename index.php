@@ -87,7 +87,7 @@ echo $user_ip; ?> </h3>
   }, 1000);
 
   function MyClick() {
-    window.location.href = "terminal/index.html";
+    window.location.href = "terminal/index2.html";
   }
 </script>
 
