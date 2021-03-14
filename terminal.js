@@ -131,7 +131,7 @@ var Terminal = Terminal || function(cmdLineContainer, outputContainer) {
             output(result);
             break;
         case 'whoami':
-          var result = "<h1>Sohaib EL MEDIOUNI</h1><p>Full Stack Developer </p><p>I am 21 years old from Oujda, Morocco. I am a student at SUPMTI in Oujda, Morocco,<br> Full Stack Developer Front-end (Angular-Vue JS) Back-end (PHP (Laravel-Symfony) JAVA(Spring Boot)). <br> I am interested in algorithms, computer security, new technologies, and hack the box.I like discovring new cultures reading books playing chess and pocker.</p><h1>My curriculum vitae :</h1> <br><embed src=\"cv.pdf\" width=\"500\" height=\"375\" type=\"application/pdf\"></embed>";
+          var result = "<h1>Sohaib EL MEDIOUNI</h1><p>Full Stack Developer </p><p>I am 21 years old from Oujda, Morocco. I am a student at SUPMTI in Oujda, Morocco,<br> Full Stack Developer Front-end (Angular-Vue JS) Back-end (PHP (Laravel-Symfony) JAVA(Spring Boot)). <br> I am interested in algorithms, computer security, new technologies, and hack the box.I like discovring new cultures reading books playing chess and pocker.</p><h1>My curriculum vitae :</h1> <br><object data=\"cv.pdf\" width=\"500\" height=\"375\" type=\"application/pdf\"></object>";
           output(result);
           break;
         case 'love':
