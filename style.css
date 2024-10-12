@@ -1,18 +1,19 @@
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:300&amp;display=swap');
 
-html, body {
+html,
+body {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Open Sans', sans-serif; "Helvetica";
+  font-family: 'Open Sans', sans-serif;
 }
 
 body {
   /* background: url(https://wallpaperxyz.com/wp-content/uploads/Desktop-Background-HD-Images-Wallpapers-Free-Download-Wallpaperxyz.com-5.jpg); */
   height: 100%;
   width: 100%;
-  overflow: hidden;  
+  overflow: hidden;
   z-index: 1;
 }
 
@@ -35,10 +36,10 @@ body {
 .login > div {
   width: auto;
   height: auto;
-  display: flex;           /* establish flex container */
-  flex-direction: column;  /* make main axis vertical */
-  justify-content: center; /* center items vertically, in this case */
-  align-items: center;     /* center items horizontally, in this case */
+  display: flex; /* establish flex container */
+  flex-direction: column; /* make main axis vertical */
+  justify-content: center; /* center items vertically */
+  align-items: center; /* center items horizontally */
 }
 
 .login > div > .image {
@@ -57,33 +58,37 @@ body {
 }
 
 .login > div > div.password {
-	width: 300px; height: 27px; line-height: 27px;
+  width: 300px;
+  height: 27px;
+  line-height: 27px;
   background: #fff;
   padding: 2px 0;
 }
 
 .login > div > div.password > .button {
-	position: relative;
-	display: inline-block;
+  position: relative;
+  display: inline-block;
   float: right;
   margin-right: 3px;
-  height: 27px; width: 27px;
+  height: 27px;
+  width: 27px;
   background-color: #0aa;
   text-align: center;
   color: #fff;
   cursor: pointer;
 }
-.login > div > div.password > .button:hover{
+.login > div > div.password > .button:hover {
   background-color: #0bb;
-  background-color: rgba(0,160,160,0.7);
+  background-color: rgba(0, 160, 160, 0.7);
 }
-.login > div > div.password > .button:active{
+.login > div > div.password > .button:active {
   background-color: #fff;
   color: #000;
 }
 
 .login > div > div.password > input {
-  border: none; outline: none;
+  border: none;
+  outline: none;
   font: 14px sans-serif;
   padding-left: 10px;
   padding: 6px;
@@ -96,20 +101,20 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  background: #0A3B76;
+  background: #0a3b76;
   width: 100%;
   height: 100%;
-  display: flex;           /* establish flex container */
-  flex-direction: column;  /* make main axis vertical */
-  justify-content: center; /* center items vertically, in this case */
-  align-items: center;     /* center items horizontally, in this case */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .slideUp {
-  -webkit-transition:-webkit-transform 1.0s ease;
-  -moz-transition: -moz-transform 1.0s ease;
-  -ms-transition: -ms-transform 1.0s ease;
-  transition: transform 1.0s ease;
+  -webkit-transition: -webkit-transform 1s ease;
+  -moz-transition: -moz-transform 1s ease;
+  -ms-transition: -ms-transform 1s ease;
+  transition: transform 1s ease;
 
   -webkit-transform: translate(0, -100%);
   -moz-transform: translate(0, -100%);
@@ -127,8 +132,8 @@ body {
   bottom: 50px;
   line-height: 50px;
 }
-.power:before{
-  content: "";
+.power:before {
+  content: '';
   position: absolute;
   left: 10px;
   top: 10px;
@@ -137,8 +142,8 @@ body {
   border-radius: 100%;
   border: 4px solid #fff;
 }
-.power:after{
-  content: "";
+.power:after {
+  content: '';
   position: absolute;
   left: 23px;
   top: 6px;
@@ -149,8 +154,8 @@ body {
 
 .clock {
   z-index: 11;
-  display: flex;           /* establish flex container */
-  flex-direction: column;  /* make main axis vertical */
+  display: flex;
+  flex-direction: column;
   margin-left: 10px;
   bottom: 10px;
   position: absolute;
@@ -172,8 +177,8 @@ body {
 }
 
 .flexcontainer {
-  display: flex;           /* establish flex container */
-  flex-direction: column;  /* make main axis vertical */
-  justify-content: center; /* center items vertically, in this case */
-  align-items: center;     /* center items horizontally, in this case */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }

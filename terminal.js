@@ -1,195 +1,322 @@
-$(function() {
-  
-    $('.prompt').html('root@Sohaib:~# ');
-
-  var term = new Terminal('#input-line .cmdline', '#container output');
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelector('.prompt').innerHTML = 'root@Sohaib:~# ';
+  const term = new Terminal('#input-line .cmdline', '#container output');
   term.init();
-  
 });
 
-var util = util || {};
-util.toArray = function(list) {
-  return Array.prototype.slice.call(list || [], 0);
-};
-
-var Terminal = Terminal || function(cmdLineContainer, outputContainer) {
-  window.URL = window.URL || window.webkitURL;
-  window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
-
-  var cmdLine_ = document.querySelector(cmdLineContainer);
-  var output_ = document.querySelector(outputContainer);
-
-  const CMDS_ = [
-    'whoami', 'education', 'interests', 'love', 'media' ,'contact', 'projects', 'clear', 'help' 
-  ];
-  
-  var fs_ = null;
-  var cwd_ = null;
-  var history_ = [];
-  var histpos_ = 0;
-  var histtemp_ = 0;
-
-  window.addEventListener('click', function(e) {
-    cmdLine_.focus();
-  }, false);
-
-  cmdLine_.addEventListener('click', inputTextClick_, false);
-  cmdLine_.addEventListener('keydown', historyHandler_, false);
-  cmdLine_.addEventListener('keydown', processNewCommand_, false);
-
-  //
-  function inputTextClick_(e) {
-    this.value = this.value;
+class Terminal {
+  constructor(cmdLineSelector, outputSelector) {
+    this.cmdLine = document.querySelector(cmdLineSelector);
+    this.output = document.querySelector(outputSelector);
+    this.prompt = document.querySelector('.prompt');
+    this.history = [];
+    this.historyPosition = 0;
+    this.tempHistory = '';
+    this.commands = this.initializeCommands();
+    this.availableCommands = Object.keys(this.commands);
+    this.addEventListeners();
   }
 
-  //
-  function historyHandler_(e) {
-    if (history_.length) {
-      if (e.keyCode == 38 || e.keyCode == 40) {
-        if (history_[histpos_]) {
-          history_[histpos_] = this.value;
+  initializeCommands() {
+    return {
+      'clear': this.clear.bind(this),
+      'help': this.help.bind(this),
+      'whoami': this.whoami.bind(this),
+      'education': this.education.bind(this),
+      'experience': this.experience.bind(this),
+      'skills': this.skills.bind(this),
+      'interests': this.interests.bind(this),
+      'projects': this.projects.bind(this),
+      'contact': this.contact.bind(this),
+      'ls': this.ls.bind(this)
+    };
+  }
+
+  addEventListeners() {
+    window.addEventListener('click', () => this.cmdLine.focus(), false);
+
+    this.cmdLine.addEventListener('click', function () {
+      this.value = this.value;
+    }, false);
+
+    this.cmdLine.addEventListener('keydown', this.handleHistory.bind(this), false);
+    this.cmdLine.addEventListener('keydown', this.handleInput.bind(this), false);
+  }
+
+  handleHistory(e) {
+    if (this.history.length) {
+      if (e.keyCode === 38 || e.keyCode === 40) {
+        if (this.history[this.historyPosition]) {
+          this.history[this.historyPosition] = this.cmdLine.value;
         } else {
-          histtemp_ = this.value;
+          this.tempHistory = this.cmdLine.value;
         }
       }
 
-      if (e.keyCode == 38) { // up
-        histpos_--;
-        if (histpos_ < 0) {
-          histpos_ = 0;
+      if (e.keyCode === 38) { // Up
+        this.historyPosition--;
+        if (this.historyPosition < 0) {
+          this.historyPosition = 0;
         }
-      } else if (e.keyCode == 40) { // down
-        histpos_++;
-        if (histpos_ > history_.length) {
-          histpos_ = history_.length;
+      } else if (e.keyCode === 40) { // Down
+        this.historyPosition++;
+        if (this.historyPosition > this.history.length) {
+          this.historyPosition = this.history.length;
         }
       }
 
-      if (e.keyCode == 38 || e.keyCode == 40) {
-        this.value = history_[histpos_] ? history_[histpos_] : histtemp_;
-        this.value = this.value; // Sets cursor to end of input.
+      if (e.keyCode === 38 || e.keyCode === 40) {
+        this.cmdLine.value = this.history[this.historyPosition] || this.tempHistory;
+        this.cmdLine.value = this.cmdLine.value; // Set cursor to end
       }
     }
   }
 
-  //
-  function processNewCommand_(e) {
-
-    if (e.keyCode == 9) { // tab
-      e.preventDefault();
-      // Implement tab suggest.
-    } else if (e.keyCode == 13) { // enter
-      // Save shell history.
-      if (this.value) {
-        history_[history_.length] = this.value;
-        histpos_ = history_.length;
+  handleInput(e) {
+    if (e.keyCode === 13) { // Enter
+      if (this.cmdLine.value) {
+        this.history.push(this.cmdLine.value);
+        this.historyPosition = this.history.length;
       }
 
-      // Duplicate current input and append to output section.
-      var line = this.parentNode.parentNode.cloneNode(true);
-      line.removeAttribute('id')
+      const line = this.cmdLine.parentNode.parentNode.cloneNode(true);
+      line.removeAttribute('id');
       line.classList.add('line');
-      var input = line.querySelector('input.cmdline');
+      const input = line.querySelector('input.cmdline');
       input.autofocus = false;
       input.readOnly = true;
-      output_.appendChild(line);
+      this.output.appendChild(line);
 
-      if (this.value && this.value.trim()) {
-        var args = this.value.split(' ').filter(function(val, i) {
-          return val;
-        });
-        var cmd = args[0].toLowerCase();
-        args = args.splice(1); // Remove cmd from arg list.
+      const inputValue = this.cmdLine.value.trim();
+      if (inputValue) {
+        const args = inputValue.split(' ').filter(Boolean);
+        const cmd = args.shift().toLowerCase();
+
+        if (this.commands[cmd]) {
+          this.commands[cmd](args);
+        } else if (this.availableCommands.includes(cmd)) {
+          this.commands[cmd](args);
+        } else {
+          this.print(`${cmd}: command not found`);
+        }
       }
 
-      switch (cmd) {
-        case 'clear':
-          output_.innerHTML = '';
-          this.value = '';
-          return;
-        case 'help':
-          var result = "<h2>Help</h2><p><b>whoami</b>: display all my information.<br><b>education</b>: display all my information about my education.<br><b>interests</b>: display all my interests.<br><b>love</b>: are you curious about my love?<br><b>contact</b>: Say hi<br><b>projects</b>:Display all my projects<br><b>clear</b>: clear terminal<br><b>help</b>: display this menu.</p>";
-          output(result);
-          break;
-          case 'ls':
-            var result = "<h2>Help</h2><p><b>whoami</b>: display all my information.<br><b>education</b>: display all my information about my education.<br><b>interests</b>: display all my interests.<br><b>love</b>: are you curious about my love?<br><b>contact</b>: Say hi<br><b>projects</b>:Display all my projects<br><b>clear</b>: clear terminal<br><b>help</b>: display this menu.</p>";
-            output(result);
-            break;
-        case 'education':
-          var result = "<h3>Education</h3>"+"<p>[1] Information Systems Engineering Oujda/Morocco 2022 (In progress),<br> [2] Specialized Technician in IT development  Oujda/Morocco<br>[3] Baccalaureate in Physics from Omar Ibn Abdelaziz High School in Oujda/Morocco.<br>[4] Delf B2 Oujda/Morocco.";
-          output(result);
-          break;
-        case 'interests': 
-          var result = "<h3>Interests</h3><p>Algorithms , Problem Solving ,Cyber Security ,Chess ,Reading Meduim Blogs , Poker , Reading , Traveling ...</p>";
-          output(result);
-          break;
-          case 'projects':var result = "<h3><a href=\"http://assitana.com/\">Assitana</a></h3><h3><a href=\"https://rwahtsouwek.store/\">rwahtsouwek.store</a></h3><h3><a href=\"https://laplanetestores.com\">laplanetestores.com/</a></h3><h3><a href=\"http://technologica.ma//\">Technologica.ma</a></h3><h3><a href=\"https://Syndik.beekom.ma/\">Syndik.beekom.ma</a></h3><h3><a href=\"https://beekom.ma/\">Beekom.ma</a></h3><h3><a href=\"https://fs.beekom.ma\">Fs.beekom.ma</a></h3><h3><a href=\"https://saidi-moto.ma/\">Saidi-moto.ma</a></h3><h3><a href=\"https://rsb.ma/\">rsb.ma</a></h3><h3><a href=\"https://clin.beekom.ma/\">Clin.com</a></h3><h3><a href=\"https://flash-box.ma/\">Falshbox.ma</a> ...</h3>";
-          output(result);
-          break;
-          case 'contact':
-            var result = "<h3>Contact</h3><h4>Email: sohaib.elmediouni23@gmail.com<br>Linkedin:<a href=\"https://www.linkedin.com/in/sohaibelmediouni/</br>\">sohaibelmediouni</a></h4>";
-            output(result);
-            break;
-        case 'whoami':
-          var result = "<h1>Sohaib EL MEDIOUNI</h1><p>Full Stack Developer </p><p>I am 21 years old from Oujda, Morocco. I am a student at SUPMTI in Oujda, Morocco,<br> Full Stack Developer Front-end (Angular-Vue JS) Back-end (PHP (Laravel-Symfony) JAVA(Spring Boot)). <br> I am interested in algorithms, computer security, new technologies, and hack the box.I like discovring new cultures reading books playing chess and pocker.</p><h1>My curriculum vitae :</h1> <br><object data=\"cv.pdf\" width=\"500\" height=\"375\" type=\"application/pdf\"></object>";
-          output(result);
-          break;
-        case 'love':
-          output("<h3>404...<br>We break codes not hearts.</h3>");
-          break;
-        case 'opeth':
-            output("<h3>Love...</h3>");
-            break;
-        default:
-          if (cmd) {
-            output(cmd + ': command not found');
-          }
-      };
-
-      window.scrollTo(0, getDocHeight_());
-      this.value = ''; // Clear/setup line for next input.
+      window.scrollTo(0, document.body.scrollHeight);
+      this.cmdLine.value = '';
+    } else if (e.keyCode === 9) { // Tab
+      e.preventDefault();
+      this.autocomplete();
     }
   }
 
-  //
-  function formatColumns_(entries) {
-    var maxName = entries[0].name;
-    util.toArray(entries).forEach(function(entry, i) {
-      if (entry.name.length > maxName.length) {
-        maxName = entry.name;
-      }
-    });
+  autocomplete() {
+    let input = this.cmdLine.value.trim();
+    const args = input.split(' ');
+    const partial = args[args.length - 1];
 
-    var height = entries.length <= 3 ?
-        'height: ' + (entries.length * 15) + 'px;' : '';
+    let possibilities = this.availableCommands.filter(c => c.startsWith(partial));
 
-    // 12px monospace font yields ~7px screen width.
-    var colWidth = maxName.length * 7;
-
-    return ['<div class="ls-files" style="-webkit-column-width:',
-            colWidth, 'px;', height, '">'];
+    if (possibilities.length === 1) {
+      args[args.length - 1] = possibilities[0];
+      this.cmdLine.value = args.join(' ') + ' ';
+    } else if (possibilities.length > 1) {
+      this.print(possibilities.join(' '));
+    }
   }
 
-  //
-  function output(html) {
-    output_.insertAdjacentHTML('beforeEnd', '<p>' + html + '</p>');
+  print(html) {
+    this.output.insertAdjacentHTML('beforeEnd', `<p>${html}</p>`);
   }
 
-  // Cross-browser impl to get document's height.
-  function getDocHeight_() {
-    var d = document;
-    return Math.max(
-        Math.max(d.body.scrollHeight, d.documentElement.scrollHeight),
-        Math.max(d.body.offsetHeight, d.documentElement.offsetHeight),
-        Math.max(d.body.clientHeight, d.documentElement.clientHeight)
-    );
+  init() {
+    const initialMessage = `
+      <h1>Sohaib EL MEDIOUNI</h1>
+      <h3>Ingénieur DevOps</h3>
+      <p>
+        <a href="https://www.linkedin.com/in/SohaibElMediouni/"><i class="fab fa-linkedin"></i></a>&nbsp;
+        <a href="https://github.com/sohaibex"><i class="fab fa-github"></i></a>&nbsp;
+        <a href="https://gitlab.com/sohaibex"><i class="fab fa-gitlab"></i></a>&nbsp;
+        <a href="https://stackoverflow.com/users/10004574/sohaib-el-mediouni"><i class="fab fa-stack-overflow"></i></a>&nbsp;
+      </p>
+      <p>Entrez "help" pour plus d'informations.</p>
+    `;
+    this.print(initialMessage);
   }
 
-  //
-  return {
-    init: function() {
-      output('<h1>Sohaib EL MEDIOUNI</h1><h3>Full Stack Developer<br><br><a href=\"https://www.linkedin.com/in/Sohaibelmediouni/\"><i class="fab fa-linkedin"></i></a> &nbsp;<a href=\"https://github.com/sohaibex"><i class="fab fa-github"></i></a>&nbsp;<a href=\"https://gitlab.com/sohaibex"><i class="fab fa-gitlab"></i></a>&nbsp;<a href=\"https://meta.stackoverflow.com/users/10004574/sohaib-el-mediouni"><i class="fab fa-stack-overflow"></i></a></h3><p>Enter "help" for more information.</p>');
-    },
-    output: output
+  clear() {
+    this.output.innerHTML = '';
+    this.cmdLine.value = '';
   }
-};
+
+  help() {
+    const helpText = `
+      <h2>Aide</h2>
+      <p>
+        <b>whoami</b>: Affiche toutes mes informations.<br>
+        <b>education</b>: Affiche mes formations.<br>
+        <b>experience</b>: Affiche mes expériences professionnelles.<br>
+        <b>skills</b>: Affiche mes compétences.<br>
+        <b>interests</b>: Affiche mes centres d'intérêts.<br>
+        <b>projects</b>: Affiche mes projets personnels.<br>
+        <b>contact</b>: Me contacter.<br>
+        <b>ls</b>: Liste des commandes disponibles.<br>
+        <b>clear</b>: Efface le terminal.<br>
+        <b>help</b>: Affiche ce menu.
+      </p>
+    `;
+    this.print(helpText);
+  }
+
+  ls() {
+    this.print(this.availableCommands.join(' '));
+  }
+
+  whoami() {
+    const whoamiText = `
+      <h1>Sohaib EL MEDIOUNI</h1>
+      <p>Software engineer</p>
+      <p>
+       As an enthusiastic full stack web and mobile developer, I am passionate about creating secure and scalable web and hybrid mobile applications using diverse technologies. Moreover, I strive to collaborate with other professionals to enhance my skills and expand my expertise in various domains.
+      </p>
+    `;
+    this.print(whoamiText);
+  }
+
+  education() {
+    const educationText = `
+      <h3>Formations</h3>
+      <ul>
+        <li><b>Master Cloud Computing and Mobility (En alternance)</b><br>Université de Picardie Jules-Verne (2022-2024) - Saint-Quentin, France</li>
+        <li><b>Licence 3 en Métiers du Numérique</b><br>Université de Picardie Jules-Verne (2021-2022) - Saint-Quentin, France</li>
+        <li><b>Ingénierie des Systèmes d'Information</b><br>SUPMTI (2020-2021) - Oujda, Maroc</li>
+        <li><b>Technicien Spécialisé en Développement Informatique</b><br>Ista LAZARET (2018-2020) - Oujda, Maroc</li>
+        <li><b>Baccalauréat en Sciences Physiques</b><br>Lycée Omar Ibn Abd El Aziz (2016-2017) - Oujda, Maroc</li>
+      </ul>
+    `;
+    this.print(educationText);
+  }
+
+  experience() {
+    const experienceText = `
+      <h3>Expériences Professionnelles</h3>
+      <ul>
+        <li><b>Développeur Concepteur chez Natixis (En alternance)</b><br>Octobre 2023 - 2024 - Paris, France
+          <ul>
+            <li>Refonte de l’architecture du Directory Service pour les sites en Asie, Amérique et Europe.</li>
+            <li>Réalisation de tests de performance avec K6.</li>
+            <li>Implémentation de tests Gherkin pour le BDD.</li>
+            <li>Conception et implémentation de services REST et WCF.</li>
+            <li>Déploiement des stacks Elasticsearch et Kibana sur OpenShift.</li>
+          </ul>
+        </li>
+        <li><b>Développeur Full Stack chez each One (En alternance)</b><br>Septembre 2022 - Septembre 2023 - Paris, France
+          <ul>
+            <li>Développement d'une application mobile pour faciliter la candidature des réfugiés en France.</li>
+            <li>Front-end avec Flutter et back-end en ASP.NET Core Web API.</li>
+          </ul>
+        </li>
+        <li><b>Développeur Front-End T-RECS</b><br>Capital Fund Management - Avril 2022 - Septembre 2022 - Paris, France
+          <ul>
+            <li>Développement de nouvelles fonctionnalités pour le projet T-RECS (front-end).</li>
+            <li>Technologies utilisées: Angular, Flask, Oracle.</li>
+          </ul>
+        </li>
+        <li><b>Développeur Full-Stack</b><br>BEEKOM - Mars 2020 - Mars 2021 - Oujda, Maroc
+          <ul>
+            <li>Site web du café <a href="https://www.assitana.com/">Assitana</a>.</li>
+            <li>Application Web de gestion de Syndic avec Laravel.</li>
+            <li>Plateforme Web de gestion de Livraison avec Symfony (API Platform) et Angular.</li>
+            <li>Site web de la salle Formule Sport en WordPress.</li>
+          </ul>
+        </li>
+        <li><b>Freelancer</b><br>2019 - 2024
+          <ul>
+            <li>Application ACTIFZ pour la gestion du patrimoine avec React Native et Stripe.</li>
+            <li>Application web Mylittle Roof avec Next.js et Nest.js.</li>
+            <li>Site web e-commerce "Electro Tasnime" avec WordPress WooCommerce.</li>
+            <li>Application web avec Angular 11 et backend avec Symfony API Platform.</li>
+            <li>Site web pour "Saidi Moto".</li>
+          </ul>
+        </li>
+        <li><b>Stage Développeur Web</b><br>Technologica - Décembre 2019 - Mai 2020 - Oujda, Maroc
+          <ul>
+            <li>Réalisation du site web officiel de l'entreprise avec WordPress.</li>
+          </ul>
+        </li>
+        <li><b>Stage Développeur Mobile</b><br>Kayna Solution - Juin 2018 - Août 2018 - Oujda, Maroc
+          <ul>
+            <li>Réalisation d'une application de géolocalisation GPS en utilisant Android Studio et les API de Google Maps.</li>
+          </ul>
+        </li>
+      </ul>
+    `;
+    this.print(experienceText);
+  }
+
+  skills() {
+    const skillsText = `
+      <h3>Compétences</h3>
+      <p>
+        <b>Cloud:</b> OpenShift, GCP, Azure, Ansible, Docker, Kubernetes, Terraform<br>
+        <b>Front-End:</b> HTML, CSS, Bootstrap, Tailwind, JavaScript, TypeScript, Angular, React<br>
+        <b>Back-End:</b> Symfony, Laravel, Java/Spring Boot, C#, ASP.NET/Core, Node.js, Python<br>
+        <b>Temps réel:</b> Kafka, Tibco Rendezvous (RDV)<br>
+        <b>Desktop:</b> C, C#<br>
+        <b>Logging & Monitoring:</b> ELK Stack, Prometheus, Grafana<br>
+        <b>Outils CI/CD:</b> XLR/XLD, Jenkins, GitHub Actions, GitLab CI<br>
+        <b>Mobile:</b> Flutter, React Native<br>
+        <b>Bases de Données:</b> SQL Server, MySQL, SQLite, MongoDB, PostgreSQL
+      </p>
+    `;
+    this.print(skillsText);
+  }
+
+  interests() {
+    const interestsText = `
+      <h3>Centres d'Intérêt</h3>
+      <p>Lecture, Échecs, Voyage, Développement Personnel</p>
+    `;
+    this.print(interestsText);
+  }
+
+  projects() {
+    const projectsText = `
+      <h3>Projets Personnels</h3>
+      <ul>
+        <li>Système de gestion et prédiction pour vélos en libre-service (GCP, Machine Learning, Vertex AI)</li>
+        <li>Application en temps réel avec architecture microservices (Node.js, React)</li>
+        <li>CRM avec Angular et Symfony</li>
+        <li>Gestion de livraison avec Spring Boot</li>
+        <li>Application Mobile "My Trip" (Android Studio, Google Photo API, Firebase)</li>
+      </ul>
+      <h3>Autres Réalisations</h3>
+      <ul>
+        <li><a href="http://assitana.com/">Assitana</a></li>
+        <li><a href="https://rwahtsouwek.store/">rwahtsouwek.store</a></li>
+        <li><a href="https://laplanetestores.com">laplanetestores.com</a></li>
+        <li><a href="http://technologica.ma/">Technologica.ma</a></li>
+        <li><a href="https://syndik.beekom.ma/">Syndik.beekom.ma</a></li>
+        <li><a href="https://beekom.ma/">Beekom.ma</a></li>
+        <li><a href="https://fs.beekom.ma">Fs.beekom.ma</a></li>
+        <li><a href="https://saidi-moto.ma/">Saidi-moto.ma</a></li>
+        <li><a href="https://rsb.ma/">rsb.ma</a></li>
+        <li><a href="https://clin.beekom.ma/">Clin.com</a></li>
+        <li><a href="https://flash-box.ma/">Flashbox.ma</a></li>
+      </ul>
+    `;
+    this.print(projectsText);
+  }
+
+  contact() {
+    const contactText = `
+      <h3>Contact</h3>
+      <p>
+        Email: <a href="mailto:sohaib.elmediouni23@gmail.com">sohaib.elmediouni23@gmail.com</a><br>
+        PGP : 940017346485B8AF6098C6DB4C3C4BB040EC0D1A <br>
+        Téléphone: +33 7 48 48 22 77<br>
+        LinkedIn: <a href="https://www.linkedin.com/in/SohaibElMediouni/">SohaibElMediouni</a>
+      </p>
+    `;
+    this.print(contactText);
+  }
+}
